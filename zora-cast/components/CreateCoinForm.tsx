@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 export default function CreateCoinForm() {
   const [name, setName] = useState('');
@@ -9,12 +10,16 @@ export default function CreateCoinForm() {
   const [supply, setSupply] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setResult(null);
 
+    if (imageFile) {
+
+    }
     const res = await fetch('/api/create-coin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -61,6 +66,13 @@ export default function CreateCoinForm() {
         onChange={(e) => setSupply(e.target.value)}
         required
         className="w-full p-3 rounded-lg bg-zinc-800 border border-zinc-700 text-white"
+      />
+
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
+        className="w-full text-white"
       />
       <button
         type="submit"
