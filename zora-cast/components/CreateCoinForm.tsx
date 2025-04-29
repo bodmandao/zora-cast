@@ -7,7 +7,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 export default function CreateCoinForm() {
   const [name, setName] = useState('');
   const [symbol, setSymbol] = useState('');
-  const [supply, setSupply] = useState('');
+  const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -18,12 +18,21 @@ export default function CreateCoinForm() {
     setResult(null);
 
     if (imageFile) {
+      const formData = new FormData();
+      formData.append('image', imageFile);
+      formData.append('name', name);
+      formData.append('description', description);
 
+      const metadataRes = await fetch('/api/create-metadata', {
+        method: 'POST',
+        body: formData,
+      });
+      
     }
     const res = await fetch('/api/create-coin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, symbol, supply }),
+      body: JSON.stringify({ name, symbol, description }),
     });
 
     const data = await res.json();
@@ -60,10 +69,10 @@ export default function CreateCoinForm() {
         className="w-full p-3 rounded-lg bg-zinc-800 border border-zinc-700 text-white"
       />
       <input
-        type="number"
-        placeholder="Total Supply"
-        value={supply}
-        onChange={(e) => setSupply(e.target.value)}
+        type="text"
+        placeholder="Description"
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
         required
         className="w-full p-3 rounded-lg bg-zinc-800 border border-zinc-700 text-white"
       />
