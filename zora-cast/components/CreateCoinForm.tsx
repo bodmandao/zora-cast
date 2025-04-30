@@ -10,6 +10,9 @@ import { base } from "viem/chains";
 import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { postToFarcaster } from '@/app/utils/farcaster';
 import { waitForTransactionReceipt } from "wagmi/actions";
+import { config } from '@/app/config';
+import * as dotenv from 'dotenv'
+dotenv.config()
 
 
 export default function CreateCoinForm() {
@@ -22,6 +25,8 @@ export default function CreateCoinForm() {
   const { writeContract } = useWriteContract();
   const { openConnectModal } = useConnectModal();
   const { address, isConnected } = useAccount();
+
+  const farcasterSignerUuid = process.env.NEXT_PUBLIC_FARCASTER_API_KEY
 
   const handleSubmit = async (e: React.FormEvent) => {
     if (!isConnected) {
@@ -62,9 +67,13 @@ export default function CreateCoinForm() {
             hash,
             chainId: base.id,
           });
+
+          const contractAddress = transactionReceipt.logs[0].address
           // 2. Prepare Farcaster message
-          const tokenUrl = `https://basescan.org/address/${createdToken.contractAddress}:${createdToken.tokenId}`;
+          const tokenUrl = `https://basescan.org/address/${contractAddress}`;
           const message = `Just created a new NFT on Zora! Check it out: ${tokenUrl}`;
+
+          const createPost = await postToFarcaster(message, [{ url: tokenUrl }], farcasterSignerUuid);
         },
         onError: (err) => {
           console.error(err);
