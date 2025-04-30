@@ -6,7 +6,10 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { createCoinCall } from '@zoralabs/coins-sdk';
 import { useAccount, useWriteContract } from 'wagmi';
 import { Address } from 'viem';
+import { base } from "viem/chains";
 import { useConnectModal } from '@rainbow-me/rainbowkit';
+import { postToFarcaster } from '@/app/utils/farcaster';
+import { waitForTransactionReceipt } from "wagmi/actions";
 
 
 export default function CreateCoinForm() {
@@ -49,18 +52,26 @@ export default function CreateCoinForm() {
         uri: metadataData.metadataURI,
         payoutRecipient: address as Address,
       };
-  
+
       const callParams = await createCoinCall(params);
       writeContract(callParams, {
-        onSuccess: () => {
+        onSuccess: async(hash) => {
           alert('done');
+
+          const transactionReceipt = await waitForTransactionReceipt(config, {
+            hash,
+            chainId: base.id,
+          });
+          // 2. Prepare Farcaster message
+          const tokenUrl = `https://basescan.org/address/${createdToken.contractAddress}:${createdToken.tokenId}`;
+          const message = `Just created a new NFT on Zora! Check it out: ${tokenUrl}`;
         },
         onError: (err) => {
           console.error(err);
         },
       });
     }
-  
+
     // const res = await fetch('/api/create-coin', { 
     //   method: 'POST',
     //   headers: { 'Content-Type': 'application/json' },
