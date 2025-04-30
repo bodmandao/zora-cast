@@ -26,81 +26,104 @@ export default function CreateCoinForm() {
   const { openConnectModal } = useConnectModal();
   const { address, isConnected } = useAccount();
 
-  const farcasterSignerUuid = process.env.NEXT_PUBLIC_FARCASTER_API_KEY
-
   const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
     if (!isConnected) {
       openConnectModal?.();
       return;
     }
-    e.preventDefault();
+  
+    if (!imageFile) {
+      toast.error('Please upload an image.');
+      return;
+    }
+  
     setLoading(true);
     setResult(null);
-
-    if (imageFile) {
-      console.log(farcasterSignerUuid)
+  
+    try {
       const formData = new FormData();
       formData.append('image', imageFile);
       formData.append('name', name);
       formData.append('description', description);
       formData.append('symbol', symbol);
-
+  
       const metadataRes = await fetch('/api/create-metadata', {
         method: 'POST',
         body: formData,
       });
-
+  
+      if (!metadataRes.ok) throw new Error('Failed to upload metadata');
+  
       const metadataData = await metadataRes.json();
-
       const params = {
         name,
         symbol,
         uri: metadataData.metadataURI,
         payoutRecipient: address as Address,
       };
-
+  
       const callParams = await createCoinCall(params);
-      writeContract(callParams, {
-        onSuccess: async (hash) => {
-          const transactionReceipt = await waitForTransactionReceipt(config, {
-            hash,
-            chainId: base.id,
+  
+      toast.promise(
+        new Promise((resolve, reject) => {
+          writeContract(callParams, {
+            onSuccess: async (hash) => {
+              try {
+                const transactionReceipt = await waitForTransactionReceipt(config, {
+                  hash,
+                  chainId: base.id,
+                });
+  
+                const contractAddress = transactionReceipt.logs[0].address;
+                const tokenUrl = `https://basescan.org/address/${contractAddress}`;
+                const message = `Just created a new coin on Zora! Check it out: ${tokenUrl}`;
+  
+                const postRes = await postToFarcaster(message, tokenUrl);
+                console.log(postRes,'pr')
+                const castHash = postRes.cast.hash;
+                const farcasterUrl = `https://warpcast.com/~/cast/${castHash}`;
+  
+                toast.success(
+                  <div>
+                    🚀 Coin created and casted!
+                    <div className="mt-1">
+                      <a href={tokenUrl} target="_blank" rel="noopener noreferrer" className="underline text-sm mr-3">
+                        View on BaseScan
+                      </a>
+                      <a href={farcasterUrl} target="_blank" rel="noopener noreferrer" className="underline text-sm">
+                        View Cast
+                      </a>
+                    </div>
+                  </div>
+                );
+                resolve(true);
+              } catch (err) {
+                toast.error('Coin created, but failed to cast to Farcaster.');
+                reject(err);
+              }
+            },
+            onError: (err) => {
+              toast.error('Failed to deploy the coin.');
+              reject(err);
+            },
           });
-        
-          const contractAddress = transactionReceipt.logs[0].address;
-          const tokenUrl = `https://basescan.org/address/${contractAddress}`;
-          const message = `Just created a new coin on Zora! Check it out: ${tokenUrl}`;
-        
-          try {
-            const postRes = await postToFarcaster(message, [{ url: tokenUrl }], farcasterSignerUuid);
-            const castHash = postRes.data.cast.hash;
-            const farcasterUrl = `https://warpcast.com/~/cast/${castHash}`;
-        
-            toast.success(
-              <div>
-                🚀 Coin created and casted!
-                <div className="mt-1">
-                  <a href={tokenUrl} target="_blank" rel="noopener noreferrer" className="underline text-sm mr-3">
-                    View on BaseScan
-                  </a>
-                  <a href={farcasterUrl} target="_blank" rel="noopener noreferrer" className="underline text-sm">
-                    View Cast
-                  </a>
-                </div>
-              </div>
-            );
-          } catch (err) {
-            console.error('Farcaster error:', err);
-            toast.error('Coin created, but failed to cast to Farcaster.');
-          } finally {
-            setLoading(false);
-          }
-        },
-      });
+        }),
+        {
+          loading: 'Deploying coin...',
+          success: 'Coin deployed!',
+          error: 'Something went wrong.',
+        }
+      );
+    } catch (err: any) {
+      console.error(err);
+      toast.error('Unexpected error occurred.',err);
+    } finally {
+      setLoading(false);
     }
-
-   
   };
+  
 
   return (
     <>
