@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { createCoinCall } from '@zoralabs/coins-sdk';
 import { useAccount, useWriteContract } from 'wagmi';
 import { Address } from 'viem';
@@ -11,6 +10,7 @@ import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { postToFarcaster } from '@/app/utils/farcaster';
 import { waitForTransactionReceipt } from "wagmi/actions";
 import { config } from '@/app/config';
+import { toast } from 'sonner';
 import * as dotenv from 'dotenv'
 dotenv.config()
 
@@ -38,6 +38,7 @@ export default function CreateCoinForm() {
     setResult(null);
 
     if (imageFile) {
+      console.log(farcasterSignerUuid)
       const formData = new FormData();
       formData.append('image', imageFile);
       formData.append('name', name);
@@ -60,44 +61,50 @@ export default function CreateCoinForm() {
 
       const callParams = await createCoinCall(params);
       writeContract(callParams, {
-        onSuccess: async(hash) => {
-          alert('done');
-
+        onSuccess: async (hash) => {
           const transactionReceipt = await waitForTransactionReceipt(config, {
             hash,
             chainId: base.id,
           });
-
-          const contractAddress = transactionReceipt.logs[0].address
-          // 2. Prepare Farcaster message
+        
+          const contractAddress = transactionReceipt.logs[0].address;
           const tokenUrl = `https://basescan.org/address/${contractAddress}`;
-          const message = `Just created a new NFT on Zora! Check it out: ${tokenUrl}`;
-
-          const createPost = await postToFarcaster(message, [{ url: tokenUrl }], farcasterSignerUuid);
-        },
-        onError: (err) => {
-          console.error(err);
+          const message = `Just created a new coin on Zora! Check it out: ${tokenUrl}`;
+        
+          try {
+            const postRes = await postToFarcaster(message, [{ url: tokenUrl }], farcasterSignerUuid);
+            const castHash = postRes.data.cast.hash;
+            const farcasterUrl = `https://warpcast.com/~/cast/${castHash}`;
+        
+            toast.success(
+              <div>
+                🚀 Coin created and casted!
+                <div className="mt-1">
+                  <a href={tokenUrl} target="_blank" rel="noopener noreferrer" className="underline text-sm mr-3">
+                    View on BaseScan
+                  </a>
+                  <a href={farcasterUrl} target="_blank" rel="noopener noreferrer" className="underline text-sm">
+                    View Cast
+                  </a>
+                </div>
+              </div>
+            );
+          } catch (err) {
+            console.error('Farcaster error:', err);
+            toast.error('Coin created, but failed to cast to Farcaster.');
+          } finally {
+            setLoading(false);
+          }
         },
       });
     }
 
-    // const res = await fetch('/api/create-coin', { 
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ name, symbol, description }),
-    // });
-
-    // const data = await res.json();
-    // setLoading(false);
-    // if (data.success) {
-    //   setResult(`✅ Coin deployed at: ${data.contractAddress}`);
-    // } else {
-    //   setResult('❌ Failed to deploy coin');
-    // }
+   
   };
 
   return (
-    <motion.form
+    <>
+     <motion.form
       onSubmit={handleSubmit}
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
@@ -145,5 +152,7 @@ export default function CreateCoinForm() {
 
       {result && <p className="text-center text-sm text-green-400 mt-2">{result}</p>}
     </motion.form>
+    </>
+   
   );
 }

@@ -1,10 +1,12 @@
 'use client';
 import CreateCoinForm from "@/components/CreateCoinForm";
 import { motion } from "framer-motion";
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 export default function Home() {
   return (
     <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6">
+      <ConnectButton />
       <motion.h1
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}

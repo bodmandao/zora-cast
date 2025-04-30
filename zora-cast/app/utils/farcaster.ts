@@ -7,7 +7,7 @@ const API_BASE_URL = 'https://api.neynar.com/v2';
 const farcasterClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   headers: {
-    'api_key': FARCASTER_API_KEY,
+    'x-api_key': FARCASTER_API_KEY,
     'Content-Type': 'application/json',
   },
 });
