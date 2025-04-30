@@ -3,6 +3,11 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { createCoinCall } from '@zoralabs/coins-sdk';
+import { useAccount, useWriteContract } from 'wagmi';
+import { Address } from 'viem';
+import { useConnectModal } from '@rainbow-me/rainbowkit';
+
 
 export default function CreateCoinForm() {
   const [name, setName] = useState('');
@@ -11,8 +16,15 @@ export default function CreateCoinForm() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const { writeContract } = useWriteContract();
+  const { openConnectModal } = useConnectModal();
+  const { address, isConnected } = useAccount();
 
   const handleSubmit = async (e: React.FormEvent) => {
+    if (!isConnected) {
+      openConnectModal?.();
+      return;
+    }
     e.preventDefault();
     setLoading(true);
     setResult(null);
@@ -22,26 +34,46 @@ export default function CreateCoinForm() {
       formData.append('image', imageFile);
       formData.append('name', name);
       formData.append('description', description);
+      formData.append('symbol', symbol);
 
       const metadataRes = await fetch('/api/create-metadata', {
         method: 'POST',
         body: formData,
       });
-      
-    }
-    const res = await fetch('/api/create-coin', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, symbol, description }),
-    });
 
-    const data = await res.json();
-    setLoading(false);
-    if (data.success) {
-      setResult(`✅ Coin deployed at: ${data.contractAddress}`);
-    } else {
-      setResult('❌ Failed to deploy coin');
+      const metadataData = await metadataRes.json();
+
+      const params = {
+        name,
+        symbol,
+        uri: metadataData.metadataURI,
+        payoutRecipient: address as Address,
+      };
+  
+      const callParams = await createCoinCall(params);
+      writeContract(callParams, {
+        onSuccess: () => {
+          alert('done');
+        },
+        onError: (err) => {
+          console.error(err);
+        },
+      });
     }
+  
+    // const res = await fetch('/api/create-coin', { 
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({ name, symbol, description }),
+    // });
+
+    // const data = await res.json();
+    // setLoading(false);
+    // if (data.success) {
+    //   setResult(`✅ Coin deployed at: ${data.contractAddress}`);
+    // } else {
+    //   setResult('❌ Failed to deploy coin');
+    // }
   };
 
   return (
