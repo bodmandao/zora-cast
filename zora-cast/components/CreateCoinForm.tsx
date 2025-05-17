@@ -126,7 +126,7 @@ export default function CreateCoinForm() {
   
 
   return (
-    <>
+    <> 
      <motion.form
       onSubmit={handleSubmit}
       initial={{ opacity: 0, scale: 0.95 }}
