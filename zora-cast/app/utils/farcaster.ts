@@ -1,33 +1,29 @@
-import axios from 'axios';
+import axios from "axios";
 
 export const postToFarcaster = async (
   text: string,
-  embedUrl?: string
+  embedUrl?: string,
+  signerUuid?: string,
+  accessToken?: string // optional
 ): Promise<any> => {
-  try {
-    const payload: any = {
-      text,
-      signer_uuid: process.env.NEXT_PUBLIC_SIGNER_ID!,
-    };
+  const headers: any = {
+    'Content-Type': 'application/json',
+    'x-api-key': process.env.NEXT_PUBLIC_FARCASTER_API_KEY,
+  };
 
-    if (embedUrl) {
-      payload.embeds = [{ url: embedUrl }];
-    }
-
-    const response = await axios.post(
-      'https://api.neynar.com/v2/farcaster/cast',
-      payload,
-      {
-        headers: {
-          'x-api-key': process.env.NEXT_PUBLIC_FARCASTER_API_KEY!,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    return response.data;
-  } catch (error: any) {
-    console.error('Farcaster post failed:', error.response?.data || error.message);
-    throw error;
+  if (accessToken) {
+    headers['Authorization'] = `Bearer ${accessToken}`;
   }
+
+  const payload = {
+    text,
+    signer_uuid: signerUuid,
+    embeds: embedUrl ? [{ url: embedUrl }] : undefined,
+  };
+
+  const response = await axios.post('https://api.neynar.com/v2/farcaster/cast', payload, {
+    headers,
+  });
+
+  return response.data;
 };
