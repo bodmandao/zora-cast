@@ -1,6 +1,7 @@
 'use client';
 
 import { getNeynarOAuthUrl } from '@/app/utils/neynar';
+// import { SignInButton } from '@neynar/react'
 
 export default function LoginButton() {
   const handleLogin = () => {

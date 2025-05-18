@@ -9,6 +9,7 @@ import { base } from "viem/chains";
 import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { postToFarcaster } from '@/app/utils/farcaster';
 import { waitForTransactionReceipt } from "wagmi/actions";
+import { useSignIn, useProfile ,SignInButton,  } from '@farcaster/auth-kit';
 import { config } from '@/app/config';
 import { toast } from 'sonner';
 import * as dotenv from 'dotenv'
@@ -26,6 +27,7 @@ export default function CreateCoinForm() {
   const { openConnectModal } = useConnectModal();
   const { address, isConnected } = useAccount();
 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -38,7 +40,7 @@ export default function CreateCoinForm() {
       toast.error('Please upload an image.');
       return;
     }
-  
+   
     setLoading(true);
     setResult(null);
   
@@ -79,11 +81,11 @@ export default function CreateCoinForm() {
                 const contractAddress = transactionReceipt.logs[0].address;
                 const tokenUrl = `https://basescan.org/address/${contractAddress}`;
                 const message = `Just created a new coin on Zora! Check it out: ${tokenUrl}`;
-  
                 const postRes = await postToFarcaster(message, tokenUrl);
                 console.log(postRes,'pr')
                 const castHash = postRes.cast.hash;
                 const farcasterUrl = `https://warpcast.com/~/cast/${castHash}`;
+                setResult(`View Cast ${farcasterUrl}`)
   
                 toast.success(
                   <div>

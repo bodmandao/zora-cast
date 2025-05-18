@@ -2,11 +2,15 @@
 import CreateCoinForm from "@/components/CreateCoinForm";
 import { motion } from "framer-motion";
 import { ConnectButton } from '@rainbow-me/rainbowkit';
+import LoginButton from "@/components/LoginButton";
+import { SignInButton } from '@farcaster/auth-kit';
+import FarcasterAuth from "@/components/FarcasterAuth";
 
 export default function Home() {
   return (
     <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6">
       <ConnectButton />
+     <FarcasterAuth />
       <motion.h1
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
