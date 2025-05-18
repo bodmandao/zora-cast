@@ -21,7 +21,7 @@ export default function CreateCoinForm() {
   const [symbol, setSymbol] = useState('');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<string | null>(null);
+  const [result, setResult] = useState<any>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const { writeContract } = useWriteContract();
   const { openConnectModal } = useConnectModal();
@@ -77,7 +77,7 @@ export default function CreateCoinForm() {
                   hash,
                   chainId: base.id,
                 });
-  
+    
                 const contractAddress = transactionReceipt.logs[0].address;
                 const tokenUrl = `https://basescan.org/address/${contractAddress}`;
                 const message = `Just created a new coin on Zora! Check it out: ${tokenUrl}`;
@@ -85,7 +85,17 @@ export default function CreateCoinForm() {
                 console.log(postRes,'pr')
                 const castHash = postRes.cast.hash;
                 const farcasterUrl = `https://warpcast.com/~/cast/${castHash}`;
-               setResult(`View cast on Farcaster: ${farcasterUrl}\nCheck out the token: ${tokenUrl}`);
+               setResult(
+  <div>
+    <a href={farcasterUrl} target="_blank" rel="noopener noreferrer">
+      View cast on Farcaster
+    </a>
+    <br />
+    <a href={tokenUrl} target="_blank" rel="noopener noreferrer">
+      Check out the token
+    </a>
+  </div>
+);
   
                 toast.success(
                   <div>
