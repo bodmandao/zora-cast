@@ -5,6 +5,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import LoginButton from "@/components/LoginButton";
 import { SignInButton } from '@farcaster/auth-kit';
 import FarcasterAuth from "@/components/FarcasterAuth";
+import RecentCoins from "@/components/RecentCoins";
 
 export default function Home() {
   return (
@@ -30,6 +31,7 @@ export default function Home() {
       </motion.p>
 
       <CreateCoinForm />
+      <RecentCoins />
     </main>
   );
 }
