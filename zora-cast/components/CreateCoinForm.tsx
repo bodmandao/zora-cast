@@ -85,7 +85,7 @@ export default function CreateCoinForm() {
                 console.log(postRes,'pr')
                 const castHash = postRes.cast.hash;
                 const farcasterUrl = `https://warpcast.com/~/cast/${castHash}`;
-                setResult(`View Cast ${farcasterUrl}`)
+               setResult(`View cast on Farcaster: ${farcasterUrl}\nCheck out the token: ${tokenUrl}`);
   
                 toast.success(
                   <div>
