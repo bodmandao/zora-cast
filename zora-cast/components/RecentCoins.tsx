@@ -14,6 +14,8 @@ export default function RecentCoinFeed() {
       try {
         const response = await getCoinsNew({ count: 10 });
         setCoins(response.data?.exploreList?.edges || []);
+
+        console.log(response)
       } catch (err) {
         console.error('Failed to fetch coins:', err);
       } finally {

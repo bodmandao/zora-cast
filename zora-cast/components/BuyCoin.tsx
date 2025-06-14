@@ -1,55 +1,51 @@
 'use client';
 
-import { useState } from 'react';
-import Swal from 'sweetalert2';
-import { Address, parseEther } from 'viem';
 import { tradeCoinCall } from '@zoralabs/coins-sdk';
-import { useWriteContract,useAccount } from 'wagmi';
+import { useWriteContract } from 'wagmi';
+import { Address, parseEther } from 'viem';
+import Swal from 'sweetalert2';
 
 export default function BuyCoin({ contractAddress }: { contractAddress: Address }) {
-  const { writeContract, status } = useWriteContract();
-  const {address} = useAccount()
-
   const handleBuy = async () => {
     const { value: amount } = await Swal.fire({
-      title: 'Buy Coin',
+      title: 'Enter amount in ETH',
       input: 'text',
-      inputLabel: 'Enter amount in ETH',
+      inputLabel: 'Buy Coin',
       inputPlaceholder: '0.01',
-      confirmButtonText: 'Buy',
-      showCancelButton: true,
-      inputValidator: (value:any) => {
-        if (!value || isNaN(Number(value)) || Number(value) <= 0) {
-          return 'Please enter a valid number';
-        }
+      background: '#1c1c1c',
+      color: '#fff',
+      confirmButtonColor: '#6366f1',
+      inputAttributes: {
+        autocapitalize: 'off',
       },
     });
 
     if (!amount) return;
 
-    const parsedAmount = parseEther(amount);
     const tradeParams = {
       direction: 'buy' as const,
       target: contractAddress,
       args: {
-        recipient: address as Address, 
-        orderSize: parsedAmount,
-        minAmountOut: BigInt(0),
+        recipient: contractAddress,
+        orderSize: parseEther(amount),
+        minAmountOut: 0n,
         tradeReferrer: '0x0000000000000000000000000000000000000000' as Address,
       },
     };
 
-    const contractCall = tradeCoinCall(tradeParams);
-    writeContract({ ...contractCall, value: parsedAmount });
+    const callParams = tradeCoinCall(tradeParams);
+    writeContract({ ...callParams, value: tradeParams.args.orderSize });
   };
+
+  const { writeContract, isPending } = useWriteContract();
 
   return (
     <button
       onClick={handleBuy}
-      disabled={status === 'pending'}
-      className="bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded"
+      disabled={isPending}
+      className="bg-green-600 hover:bg-green-700 transition-all text-white px-4 py-2 rounded shadow-md text-sm"
     >
-      {status === 'pending' ? 'Buying...' : 'Buy'}
+      {isPending ? 'Buying...' : 'Buy'}
     </button>
   );
 }

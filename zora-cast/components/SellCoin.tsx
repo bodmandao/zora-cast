@@ -1,57 +1,51 @@
 'use client';
 
-import { useState } from 'react';
-import Swal from 'sweetalert2';
-import { Address, parseEther } from 'viem';
 import { tradeCoinCall } from '@zoralabs/coins-sdk';
-import { useWriteContract,useAccount } from 'wagmi';
-
+import { useWriteContract } from 'wagmi';
+import { Address, parseEther } from 'viem';
+import Swal from 'sweetalert2';
 
 export default function SellCoin({ contractAddress }: { contractAddress: Address }) {
-  const { writeContract, status } = useWriteContract();
-  const {address} = useAccount()
-
-
   const handleSell = async () => {
     const { value: amount } = await Swal.fire({
-      title: 'Sell Coin',
+      title: 'Enter amount in ETH',
       input: 'text',
-      inputLabel: 'Enter amount to sell',
+      inputLabel: 'Sell Coin',
       inputPlaceholder: '0.01',
-      confirmButtonText: 'Sell',
-      showCancelButton: true,
-      inputValidator: (value) => {
-        if (!value || isNaN(Number(value)) || Number(value) <= 0) {
-          return 'Please enter a valid number';
-        }
+      background: '#1c1c1c',
+      color: '#fff',
+      confirmButtonColor: '#f87171',
+      inputAttributes: {
+        autocapitalize: 'off',
       },
     });
 
     if (!amount) return;
 
-    const parsedAmount = parseEther(amount);
     const tradeParams = {
       direction: 'sell' as const,
       target: contractAddress,
       args: {
-        recipient: address as Address,
-        orderSize: parsedAmount,
-        minAmountOut: BigInt(0),
+        recipient: contractAddress,
+        orderSize: parseEther(amount),
+        minAmountOut: 0n,
         tradeReferrer: '0x0000000000000000000000000000000000000000' as Address,
       },
     };
 
-    const contractCall = tradeCoinCall(tradeParams);
-    writeContract({ ...contractCall });
+    const callParams = tradeCoinCall(tradeParams);
+    writeContract({ ...callParams });
   };
+
+  const { writeContract, isPending } = useWriteContract();
 
   return (
     <button
       onClick={handleSell}
-      disabled={status === 'pending'}
-      className="bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded ml-2"
+      disabled={isPending}
+      className="bg-red-600 hover:bg-red-700 transition-all text-white px-4 py-2 rounded shadow-md text-sm ml-2"
     >
-      {status === 'pending' ? 'Selling...' : 'Sell'}
+      {isPending ? 'Selling...' : 'Sell'}
     </button>
   );
 }
