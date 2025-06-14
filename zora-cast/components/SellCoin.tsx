@@ -28,7 +28,7 @@ export default function SellCoin({ contractAddress }: { contractAddress: Address
       args: {
         recipient: contractAddress,
         orderSize: parseEther(amount),
-        minAmountOut: 0n,
+        minAmountOut: BigInt(0),
         tradeReferrer: '0x0000000000000000000000000000000000000000' as Address,
       },
     };
