@@ -38,7 +38,7 @@ export default function MyCoinFeed() {
   if (!address)
     return (
       <div className="text-center text-zinc-300 mt-20">
-        <p className="text-lg">🔐 Connect your wallet to view your minted coins.</p>
+        <p className="text-lg">🔐 Connect your wallet to view your  coins.</p>
       </div>
     );
 
@@ -53,7 +53,7 @@ export default function MyCoinFeed() {
     return (
       <div className="text-center mt-20">
         <img src="/empty-state.svg" alt="No coins" className="w-40 mx-auto mb-6 opacity-70" />
-        <p className="text-zinc-400 text-lg">You haven’t minted any coins yet.</p>
+        <p className="text-zinc-400 text-lg">You haven’t created any coins yet.</p>
       </div>
     );
 
@@ -65,7 +65,7 @@ export default function MyCoinFeed() {
         transition={{ duration: 0.5 }}
         className="text-3xl font-bold text-white mb-8 text-center md:text-left"
       >
-        💰 Your Minted Coins
+        💰 My Created Coins
       </motion.h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -82,4 +82,4 @@ export default function MyCoinFeed() {
       </div>
     </div>
   );
-}
+}     

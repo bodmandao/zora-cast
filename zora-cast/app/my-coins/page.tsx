@@ -12,7 +12,7 @@ export default function MyCoinsPage() {
         transition={{ duration: 0.5 }}
         className="text-4xl font-bold mb-8 text-center bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600"
       >
-        🪙 Your Minted Coins
+        🪙 My Created Coins
       </motion.h1>
 
       <div className="w-full max-w-6xl">

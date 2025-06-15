@@ -36,7 +36,7 @@ const saveCastUrl = (contractAddress: string, castHash: string) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    
     if (!isConnected) {
       openConnectModal?.();
       return;
@@ -89,7 +89,7 @@ const saveCastUrl = (contractAddress: string, castHash: string) => {
                 const message = `Just created a new coin on Zora! Check it out: ${tokenUrl}`;
                 const postRes = await postToFarcaster(message, tokenUrl);
                 console.log(postRes, 'pr')
-                const castHash = postRes.cast.hash;
+                const castHash = postRes?.cast.hash;
                 const farcasterUrl = `https://warpcast.com/~/cast/${castHash}`;
                 saveCastUrl(contractAddress,farcasterUrl)
                 setResult(
@@ -119,6 +119,7 @@ const saveCastUrl = (contractAddress: string, castHash: string) => {
                 );
                 resolve(true);
               } catch (err) {
+                console.log(err,'error')
                 toast.error('Coin created, but failed to cast to Farcaster.');
                 reject(err);
               }
