@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import * as dotenv from 'dotenv'
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '@/app/lib/firebase';
+import { saveCoinToFirebase } from '@/app/utils/CoinHelper';
 dotenv.config()
 
 
@@ -95,14 +96,7 @@ export default function CreateCoinForm() {
                 const castHash = postRes?.cast.hash;
                 const farcasterUrl = `https://warpcast.com/~/cast/${castHash}`;
                 saveCastUrl(contractAddress, farcasterUrl)
-                await addDoc(collection(db, 'zoraCastCoins'), {
-                  name,
-                  symbol,
-                  contractAddress,
-                  creatorAddress: address,
-                  castUrl: castHash,
-                  timestamp: Date.now(),
-                });
+                saveCoinToFirebase(contractAddress)
                 setResult(
                   <div>
                     <a href={farcasterUrl} target="_blank" rel="noopener noreferrer">
@@ -206,7 +200,7 @@ export default function CreateCoinForm() {
           {loading ? 'Launching...' : 'Launch Coin'}
         </button>
 
-        {result && <p className="text-center text-sm text-green-400 mt-2">{result}</p>}
+        {result && <div className="text-center text-sm text-green-400 mt-2">{result}</div>}
       </motion.form>
     </>
 

@@ -19,7 +19,7 @@ const ERC20_ABI = [
 
 export default function CoinCard({ coin }: { coin: any }) {
   const { address: userAddress } = useAccount();
-
+console.log(coin,'coin')
   if (!coin) return null;
 
   const {
