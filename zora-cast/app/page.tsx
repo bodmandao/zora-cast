@@ -6,9 +6,11 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import RecentCoins from "@/components/RecentCoins";
 import Link from "next/link";
 import { useAccount } from "wagmi";
+import { setApiKey } from "@zoralabs/coins-sdk";
 
 export default function Home() {
   const { isConnected } = useAccount();
+  setApiKey(process.env.NEXT_PUBLIC_ZORA_API_KEY);
 
   return (
     <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6">

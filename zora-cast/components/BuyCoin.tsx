@@ -1,11 +1,15 @@
 'use client';
 
-import { tradeCoinCall } from '@zoralabs/coins-sdk';
-import { useWriteContract } from 'wagmi';
+import { useAccount, useWalletClient, usePublicClient } from 'wagmi';
+import { tradeCoin, TradeParameters, DeployCurrency } from '@zoralabs/coins-sdk';
 import { Address, parseEther } from 'viem';
 import Swal from 'sweetalert2';
 
 export default function BuyCoin({ contractAddress }: { contractAddress: Address }) {
+  const { address } = useAccount();
+  const { data: walletClient } = useWalletClient();
+  const publicClient = usePublicClient();
+
   const handleBuy = async () => {
     const { value: amount } = await Swal.fire({
       title: 'Enter amount in ETH',
@@ -20,32 +24,41 @@ export default function BuyCoin({ contractAddress }: { contractAddress: Address 
       },
     });
 
-    if (!amount) return;
+    if (!amount || !walletClient || !publicClient || !address) return;
 
-    const tradeParams = {
-      direction: 'buy' as const,
-      target: contractAddress,
-      args: {
-        recipient: contractAddress,
-        orderSize: parseEther(amount),
-        minAmountOut: BigInt(0),
-        tradeReferrer: '0x0000000000000000000000000000000000000000' as Address,
+    const tradeParameters: TradeParameters = {
+      sell: { type: 'eth' },
+      buy: {
+        type: 'erc20',
+        address: contractAddress,
       },
+      amountIn: parseEther(amount),
+      slippage: 0.05, // 5% slippage
+      sender: address,
     };
 
-    const callParams = tradeCoinCall(tradeParams);
-    writeContract({ ...callParams, value: tradeParams.args.orderSize });
-  };
+    try {
+      const receipt = await tradeCoin({
+        tradeParameters,
+        walletClient,
+        publicClient,
+        account: walletClient.account,
+      });
 
-  const { writeContract, isPending } = useWriteContract();
+      console.log('Trade successful:', receipt);
+      Swal.fire('Success', 'Coin purchased successfully!', 'success');
+    } catch (err) {
+      console.error('Trade failed:', err);
+      Swal.fire('Error', 'Trade failed', 'error');
+    }
+  };
 
   return (
     <button
       onClick={handleBuy}
-      disabled={isPending}
       className="bg-green-600 hover:bg-green-700 transition-all text-white px-4 py-2 rounded shadow-md text-sm"
     >
-      {isPending ? 'Buying...' : 'Buy'}
+      Buy
     </button>
   );
 }

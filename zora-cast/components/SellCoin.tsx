@@ -1,14 +1,18 @@
 'use client';
 
-import { tradeCoinCall } from '@zoralabs/coins-sdk';
-import { useWriteContract } from 'wagmi';
+import { useAccount, useWalletClient, usePublicClient } from 'wagmi';
+import { tradeCoin, TradeParameters } from '@zoralabs/coins-sdk';
 import { Address, parseEther } from 'viem';
 import Swal from 'sweetalert2';
 
 export default function SellCoin({ contractAddress }: { contractAddress: Address }) {
+  const { address } = useAccount();
+  const { data: walletClient } = useWalletClient();
+  const publicClient = usePublicClient();
+
   const handleSell = async () => {
     const { value: amount } = await Swal.fire({
-      title: 'Enter amount in ETH',
+      title: 'Enter amount to sell',
       input: 'text',
       inputLabel: 'Sell Coin',
       inputPlaceholder: '0.01',
@@ -20,32 +24,44 @@ export default function SellCoin({ contractAddress }: { contractAddress: Address
       },
     });
 
-    if (!amount) return;
+    if (!amount || !walletClient || !publicClient || !walletClient.account || !address) {
+      Swal.fire('Wallet not connected', 'Please connect your wallet', 'error');
+      return;
+    }
 
-    const tradeParams = {
-      direction: 'sell' as const,
-      target: contractAddress,
-      args: {
-        recipient: contractAddress,
-        orderSize: parseEther(amount),
-        minAmountOut: BigInt(0),
-        tradeReferrer: '0x0000000000000000000000000000000000000000' as Address,
+    const tradeParameters: TradeParameters = {
+      sell: {
+        type: 'erc20',
+        address: contractAddress,
       },
+      buy: { type: 'eth' },
+      amountIn: parseEther(amount),
+      slippage: 0.05,
+      sender: address,
     };
 
-    const callParams = tradeCoinCall(tradeParams);
-    writeContract({ ...callParams });
-  };
+    try {
+      const receipt = await tradeCoin({
+        tradeParameters,
+        walletClient,
+        publicClient,
+        account: walletClient.account,
+      });
 
-  const { writeContract, isPending } = useWriteContract();
+      console.log('Sell successful:', receipt);
+      Swal.fire('Success', 'Coin sold successfully!', 'success');
+    } catch (err) {
+      console.error('Sell failed:', err);
+      Swal.fire('Error', 'Sell failed', 'error');
+    }
+  };
 
   return (
     <button
       onClick={handleSell}
-      disabled={isPending}
       className="bg-red-600 hover:bg-red-700 transition-all text-white px-4 py-2 rounded shadow-md text-sm ml-2"
     >
-      {isPending ? 'Selling...' : 'Sell'}
+      Sell
     </button>
   );
 }

@@ -25,7 +25,7 @@ export default function CoinCard({ coin }: { coin: any }) {
   const {
     name,
     symbol,
-    address, 
+    address,
     contractAddress,
     createdAt,
     creatorAddress,
@@ -65,6 +65,11 @@ export default function CoinCard({ coin }: { coin: any }) {
       <div className="p-5 space-y-3 text-white">
         <div className="flex items-center justify-between">
           <h3 className="text-xl font-semibold">{name}</h3>
+          {coin.isZoraCastCoin && (
+            <span className="inline-block mt-1 bg-purple-700 text-xs px-2 py-1 rounded text-white font-medium">
+              🚀 Created on ZoraCast
+            </span>
+          )}
           <span className="text-sm text-gray-400">{symbol}</span>
         </div>
 

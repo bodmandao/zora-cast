@@ -2,10 +2,13 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { createCoinCall } from '@zoralabs/coins-sdk';
-import { useAccount, useWriteContract } from 'wagmi';
-import { Address } from 'viem';
+import { createCoinCall, ValidMetadataURI,InitialPurchaseCurrency,createMetadataBuilder,
+  createZoraUploaderForCreator,CreateCoinArgs,DeployCurrency
+ } from '@zoralabs/coins-sdk';
+import { useAccount, useWriteContract,useSimulateContract  } from 'wagmi';
+import { Address, parseEther } from 'viem';
 import { base } from "viem/chains";
+import { simulateContract } from 'wagmi/actions';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { postToFarcaster } from '@/app/utils/farcaster';
 import { waitForTransactionReceipt } from "wagmi/actions";
@@ -13,6 +16,8 @@ import { useSignIn, useProfile, SignInButton, } from '@farcaster/auth-kit';
 import { config } from '@/app/config';
 import { toast } from 'sonner';
 import * as dotenv from 'dotenv'
+import { collection, addDoc } from 'firebase/firestore';
+import { db } from '@/app/lib/firebase';
 dotenv.config()
 
 
@@ -27,16 +32,16 @@ export default function CreateCoinForm() {
   const { openConnectModal } = useConnectModal();
   const { address, isConnected } = useAccount();
 
-const saveCastUrl = (contractAddress: string, castHash: string) => {
-  const url = `https://warpcast.com/~/cast/${castHash}`;
-  const current = JSON.parse(localStorage.getItem('castUrls') || '{}');
-  current[contractAddress] = url;
-  localStorage.setItem('castUrls', JSON.stringify(current));
-};
+  const saveCastUrl = (contractAddress: string, castHash: string) => {
+    const url = `https://warpcast.com/~/cast/${castHash}`;
+    const current = JSON.parse(localStorage.getItem('castUrls') || '{}');
+    current[contractAddress] = url;
+    localStorage.setItem('castUrls', JSON.stringify(current));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!isConnected) {
       openConnectModal?.();
       return;
@@ -51,29 +56,27 @@ const saveCastUrl = (contractAddress: string, castHash: string) => {
     setResult(null);
 
     try {
-      const formData = new FormData();
-      formData.append('image', imageFile);
-      formData.append('name', name);
-      formData.append('description', description);
-      formData.append('symbol', symbol);
+      const { createMetadataParameters } = await createMetadataBuilder()
+      .withName(name)
+      .withSymbol(symbol)
+      .withDescription(description)
+      .withImage(imageFile)
+      .upload(createZoraUploaderForCreator(address as Address));
 
-      const metadataRes = await fetch('/api/create-metadata', {
-        method: 'POST',
-        body: formData,
-      });
+       const createCoin: CreateCoinArgs = {
+      ...createMetadataParameters,
+      payoutRecipient: address as Address,
+      currency: DeployCurrency.ZORA,
+    };
 
-      if (!metadataRes.ok) throw new Error('Failed to upload metadata');
+ const callParams = await createCoinCall(createCoin);
 
-      const metadataData = await metadataRes.json();
-      const params = {
-        name,
-        symbol,
-        uri: metadataData.metadataURI,
-        payoutRecipient: address as Address,
-      };
-
-      const callParams = await createCoinCall(params);
-
+    await simulateContract(config, {
+      ...callParams,
+      account: address,
+      chainId: base.id,
+    });
+    
       toast.promise(
         new Promise((resolve, reject) => {
           writeContract(callParams, {
@@ -91,7 +94,15 @@ const saveCastUrl = (contractAddress: string, castHash: string) => {
                 console.log(postRes, 'pr')
                 const castHash = postRes?.cast.hash;
                 const farcasterUrl = `https://warpcast.com/~/cast/${castHash}`;
-                saveCastUrl(contractAddress,farcasterUrl)
+                saveCastUrl(contractAddress, farcasterUrl)
+                await addDoc(collection(db, 'zoraCastCoins'), {
+                  name,
+                  symbol,
+                  contractAddress,
+                  creatorAddress: address,
+                  castUrl: castHash,
+                  timestamp: Date.now(),
+                });
                 setResult(
                   <div>
                     <a href={farcasterUrl} target="_blank" rel="noopener noreferrer">
@@ -119,13 +130,15 @@ const saveCastUrl = (contractAddress: string, castHash: string) => {
                 );
                 resolve(true);
               } catch (err) {
-                console.log(err,'error')
+                console.log(err, 'error')
                 toast.error('Coin created, but failed to cast to Farcaster.');
                 reject(err);
               }
             },
             onError: (err) => {
               toast.error('Failed to deploy the coin.');
+                console.log(err, 'error')
+
               reject(err);
             },
           });
